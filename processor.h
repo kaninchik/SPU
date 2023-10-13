@@ -3,33 +3,46 @@
 
 #include"stack.h"
 
-struct Registrs
+const int reg_amount = 5;
+const uint8_t imm = 0x10;
+const uint8_t reg = 0x20;
+const uint8_t cmd = 0xF;
+
+struct Cpu
 {
-    int rax = 0;
-    int rbx = 0;
-    int rcx = 0;
-    int rdx = 0;
+    int regs[reg_amount] = {};
+    int *func_arr = NULL;
+    const char *regs_name[reg_amount] = {"rax", "rbx", "rcx", "rdx"};
+    int elem_count = 0;
+
 };
 
-/*struct flags
+enum Functions
 {
-    unsigned int is_func : 4;
-    unsigned int is_registr : 4;
-};*/
+    push = 1,
+    in = 2,
+    div = 3,
+    sub = 4,
+    add = 5,
+    mul = 6,
+    out = 7,
+    pop = 11,
+    hlt = -1
+};
 
-int Processor(my_stack *stk, Registrs *rgs /*flags byte*/);
-void Print_content(my_stack *stk, Registrs *rgs);
-void Push(my_stack *stk, FILE *fp1);
-void Choose_func(my_stack *stk, FILE *fp1, Registrs *rgs /*flags byte*/, int func);
-void Pop_r(my_stack *stk, FILE *fp1, Registrs *rgs);
-void Push_r(my_stack *stk, FILE *fp1, Registrs *rgs);
-void Processor_ctor(my_stack *stk, Registrs *rgs);
-void In(my_stack *stk);
-void Div(my_stack *stk);
-void Sub(my_stack *stk);
-void Out(my_stack *stk);
-void Add(my_stack *stk);
-void Mul(my_stack *stk);
+int Processor(My_stack *stk, Cpu *prc);
+void Print_content(My_stack *stk, Cpu *prc);
+void Push(My_stack *stk, int Elem);
+void Pop_r(My_stack *stk, Cpu *prc, int num_reg);
+void Push_r(My_stack *stk, Cpu *prc, int num_reg);
+void Processor_ctor(My_stack *stk, Cpu *prc);
+void Process_file(Cpu *prc);
+void In(My_stack *stk);
+void Div(My_stack *stk);
+void Sub(My_stack *stk);
+void Out(My_stack *stk);
+void Add(My_stack *stk);
+void Mul(My_stack *stk);
 
 
 #endif // PROCESSOR_H_INCLUDED

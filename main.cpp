@@ -4,7 +4,6 @@
 
 #include"stack.h"
 #include"security.h"
-#include"kernel_func.h"
 #include"dump.h"
 #include"assembler.h"
 #include"processor.h"
@@ -12,20 +11,17 @@
 
 int main()
 {
-    my_stack stk = {};
+    My_stack stk = {};
 
-    Registrs rgs = {};
+    Cpu prc;
 
-    /*flags byte = {15, 15};*/
+    Processor_ctor(&stk, &prc);
 
-    Processor_ctor(&stk, &rgs);
+    Assembler(&prc);
 
-    Assembler();
+    Processor(&stk, &prc);
 
-    Disassembler();
-
-    Processor(&stk, &rgs /*byte*/);
-
+    Disassembler(&prc);
 
     Stack_dtor(&stk);
 

@@ -1,26 +1,38 @@
 #include<cstdio>
 #include<cstring>
+#include<cstdlib>
 #include<cstdint>
 #include<cassert>
+#include<sys/stat.h>
 
 #include"stack.h"
 #include"security.h"
-#include"kernel_func.h"
 #include"dump.h"
 #include"assembler.h"
 #include"processor.h"
 #include"disassembler.h"
 
-int Processor(my_stack *stk, Registrs *rgs)
+
+int Processor(My_stack *stk, Cpu *prc)
 {
-    int n_func = 0;
+    Process_file(prc);
 
-    FILE *fp1 = fopen("assembler.txt", "r");
-
-    while(fscanf(fp1, "%d", &n_func) != EOF)
+    for(int i = 0; prc->func_arr[i] != hlt; i++)
     {
-        switch(n_func)
+        switch(prc->func_arr[i] & cmd)
         {
+            case push:
+            {
+                if(prc->func_arr[i] & reg)
+                    Push_r(stk, prc, prc->func_arr[i + 1]);
+
+                if(prc->func_arr[i] & imm)
+                    Push(stk, prc->func_arr[i + 1]);
+
+                i++;
+                break;
+            }
+
             case in:
             {
                 In(stk);
@@ -57,76 +69,45 @@ int Processor(my_stack *stk, Registrs *rgs)
                 break;
             }
 
-            case hlt:
+            case pop:
             {
-                break;
+                if(prc->func_arr[i] & reg)
+                {
+                    Pop_r(stk, prc, prc->func_arr[i + 1]);
+                    i++;
+                    break;
+                }
             }
 
             default:
             {
-                Choose_func(stk, fp1, rgs, /*byte,*/ n_func);
+                assert(!"Unknown function");
                 break;
             }
         }
-
-        if(n_func == hlt)
-            break;
     }
-
-    fclose(fp1);
 
     return 0;
 }
 
-void Push(my_stack *stk, FILE *fp1)
+void Push(My_stack *stk, int Elem)
 {
     assert(stk != NULL);
-    assert(fp1 != NULL);
-
-    int Elem = 0;
-
-    fscanf(fp1, " %d", &Elem);
 
     Stack_push(stk, Elem);
     Print_stack(stk);
 }
 
-void Push_r(my_stack *stk, FILE *fp1, Registrs *rgs)
+void Push_r(My_stack *stk, Cpu *prc, int num_reg)
 {
     assert(stk != NULL);
-    assert(fp1 != NULL);
 
-    int num_reg = 0;
+    Stack_push(stk, prc->regs[num_reg]);
 
-    fscanf(fp1, " %d", &num_reg);
-
-    switch(num_reg)
-    {
-        case 1:
-            Stack_push(stk, rgs->rax);
-            break;
-
-        case 2:
-            Stack_push(stk, rgs->rbx);
-            break;
-
-        case 3:
-            Stack_push(stk, rgs->rcx);
-            break;
-
-        case 4:
-            Stack_push(stk, rgs->rdx);
-            break;
-
-        default:
-            assert(!"Unknown registr");
-            break;
-    }
-
-    Print_content(stk, rgs);
+    Print_content(stk, prc);
 }
 
-void In(my_stack *stk)
+void In(My_stack *stk)
 {
     assert(stk != NULL);
 
@@ -138,7 +119,7 @@ void In(my_stack *stk)
     Print_stack(stk);
 }
 
-void Div(my_stack *stk)
+void Div(My_stack *stk)
 {
     assert(stk != NULL);
 
@@ -151,7 +132,7 @@ void Div(my_stack *stk)
     Print_stack(stk);
 }
 
-void Sub(my_stack *stk)
+void Sub(My_stack *stk)
 {
     assert(stk != NULL);
 
@@ -164,7 +145,7 @@ void Sub(my_stack *stk)
     Print_stack(stk);
 }
 
-void Out(my_stack *stk)
+void Out(My_stack *stk)
 {
     int x1 = 0;
 
@@ -173,7 +154,7 @@ void Out(my_stack *stk)
     Print_stack(stk);
 }
 
-void Add(my_stack *stk)
+void Add(My_stack *stk)
 {
     assert(stk != NULL);
 
@@ -186,7 +167,7 @@ void Add(my_stack *stk)
     Print_stack(stk);
 }
 
-void Mul(my_stack *stk)
+void Mul(My_stack *stk)
 {
     assert(stk != NULL);
 
@@ -199,100 +180,56 @@ void Mul(my_stack *stk)
     Print_stack(stk);
 }
 
-void Pop_r(my_stack *stk, FILE *fp1, Registrs *rgs)
+void Pop_r(My_stack *stk, Cpu *prc, int num_reg)
 {
     assert(stk != NULL);
-    assert(rgs != NULL);
+    assert(prc != NULL);
 
     int Elem = 0;
-    int num_reg = 0;
 
     Stack_pop(stk, &Elem);
-    fscanf(fp1, " %d", &num_reg);
 
-    switch(num_reg)
-    {
-        case 1:
-            rgs->rax = Elem;
-            break;
+    prc->regs[num_reg] = Elem;
 
-        case 2:
-            rgs->rbx = Elem;
-            break;
-
-        case 3:
-            rgs->rcx = Elem;
-            break;
-
-        case 4:
-            rgs->rdx = Elem;
-            break;
-
-        default:
-            assert(!"Unknown registr");
-            break;
-    }
-
-    Print_content(stk, rgs);
+    Print_content(stk, prc);
 }
 
-
-void Processor_ctor(my_stack *stk, Registrs *rgs)
+void Processor_ctor(My_stack *stk, Cpu *prc)
 {
     Stack_ctor(stk);
 
-    rgs->rax = 0;
-    rgs->rbx = 0;
-    rgs->rcx = 0;
-    rgs->rdx = 0;
+    prc->elem_count = 0;
+    prc->func_arr = NULL;
+    prc->regs[reg_amount] = {};
 }
 
-void Choose_func(my_stack *stk, FILE *fp1, Registrs *rgs, /*flags byte,*/ int n_func)
+void Print_content(My_stack *stk, Cpu *prc)
 {
     assert(stk != NULL);
-    assert(fp1 != NULL);
-    assert(rgs != NULL);
-
-    switch(n_func & 15)
-    {
-        case push:
-        {
-            if((n_func & 240) == 32)
-                Push_r(stk, fp1, rgs);
-            else
-                Push(stk, fp1);
-
-            break;
-        }
-
-        case pop:
-        {
-            if((n_func & 240) == 32)
-                Pop_r(stk, fp1, rgs);
-
-            break;
-        }
-
-        default:
-        {
-            assert(!"Unknown function");
-            break;
-        }
-    }
-}
-
-void Print_content(my_stack *stk, Registrs *rgs)
-{
-    assert(stk != NULL);
-    assert(rgs != NULL);
+    assert(prc != NULL);
 
     Print_stack(stk);
 
-    printf("rax = %d\n", rgs->rax);
-    printf("rbx = %d\n", rgs->rbx);
-    printf("rcx = %d\n", rgs->rcx);
-    printf("rdx = %d\n", rgs->rdx);
+    for(int i = 1; i < reg_amount; i++)
+        printf("reg %d = %d\n", i, prc->regs[i]);
 }
+
+void Process_file(Cpu *prc)
+{
+    FILE *fp1 = fopen("assembler.bin", "rb");
+
+    prc->func_arr = (int *)calloc(prc->elem_count, sizeof(int));
+
+    fread(prc->func_arr, sizeof(int), prc->elem_count, fp1);
+
+    fclose(fp1);
+}
+
+
+
+
+
+
 
 
 
