@@ -11,81 +11,38 @@
 #include"disassembler.h"
 
 
-int Disassembler(Cpu *prc)
+#define DEF_CMD(name, num, args, code)                                  \
+    case(num):                                                          \
+    {                                                                   \
+        if(args > 0)                                                    \
+        {                                                               \
+            int arg = prc->func_arr[i + 1];                             \
+                                                                        \
+            if(prc->func_arr[i] & reg)                                  \
+                fprintf(fp2, "%s %s\n", #name, regs_name[arg - 1]);     \
+                                                                        \
+            if(prc->func_arr[i] & imm)                                  \
+                fprintf(fp2, "%s %d\n", #name , arg);                   \
+                                                                        \
+             i++;                                                       \
+        }                                                               \
+        else                                                            \
+            fprintf(fp2, "%s\n", #name);                                \
+                                                                        \
+        break;                                                          \
+    }
+
+
+int Disassembler(Spu *prc)
 {
     FILE *fp2 = fopen("disassembler.txt", "w");
 
     for(int i = 0; i < prc->elem_count; i++)
     {
-        printf("func = %d\n", prc->func_arr[i]);
-
         switch(prc->func_arr[i] & cmd)
         {
-            case push:
-            {
-                int arg = prc->func_arr[i + 1];
-
-                if(prc->func_arr[i] & reg)
-                    fprintf(fp2, "%s %s\n", "push", prc->regs_name[arg]);
-
-                if(prc->func_arr[i] & imm)
-                    fprintf(fp2, "%s %d\n", "push", arg);
-                i++;
-                break;
-            }
-
-            case in:
-            {
-                fprintf(fp2, "%s\n", "in");
-                break;
-            }
-
-            case div:
-            {
-                fprintf(fp2, "%s\n", "div");
-                break;
-            }
-
-            case sub:
-            {
-                fprintf(fp2, "%s\n", "sub");
-                break;
-            }
-
-            case out:
-            {
-                fprintf(fp2, "%s\n", "out");
-                break;
-            }
-
-            case add:
-            {
-                fprintf(fp2, "%s\n", "add");
-                break;
-            }
-
-            case mul:
-            {
-                fprintf(fp2, "%s\n", "mul");
-                break;
-            }
-
-            case pop:
-            {
-                int arg = prc->func_arr[i + 1];
-
-                if(prc->func_arr[i] & reg)
-                    fprintf(fp2, "%s %s\n", "pop", prc->regs_name[arg]);
-
-                i++;
-                break;
-            }
-
-            case hlt:
-            {
-                fprintf(fp2, "%s\n", "hlt");
-                break;
-            }
+            #include"commands.h"
+            #undef DEF_CMD
 
             default:
             {

@@ -1,48 +1,64 @@
 #ifndef PROCESSOR_H_INCLUDED
 #define PROCESSOR_H_INCLUDED
 
+#include<cassert>
 #include"stack.h"
 
-const int reg_amount = 5;
-const uint8_t imm = 0x10;
-const uint8_t reg = 0x20;
-const uint8_t cmd = 0xF;
+const uint8_t imm = 1 << 5;
+const uint8_t reg = imm << 1;
+const uint8_t osu = reg << 1;
+const uint8_t cmd = 0b11111;
 
-struct Cpu
+static_assert((imm & reg) == 0, "imm and reg overlop");
+static_assert((imm & cmd) == 0, "imm and cmd overlop");
+static_assert((reg & cmd) == 0, "reg and cmd overlop");
+
+static const char *regs_name[] = {"rax",
+                                  "rbx",
+                                  "rcx",
+                                  "rdx",
+                                  "rsi",
+                                  "rdi",
+                                  "rbp",
+                                  "rsp",
+                                  "r08",
+                                  "r09",
+                                  "r10",
+                                  "r11",
+                                  "r12",
+                                  "r13",
+                                  "r14",
+                                  "r15"};
+
+const int reg_amount = sizeof(regs_name)/sizeof(regs_name[0]);
+
+struct Spu
 {
+    My_stack stk = {};
+    My_stack adress = {};
     int regs[reg_amount] = {};
-    int *func_arr = NULL;
-    const char *regs_name[reg_amount] = {"rax", "rbx", "rcx", "rdx"};
-    int elem_count = 0;
-
+    int *instr = NULL;
+    int *osu = NULL;
+    int instr_number = 0;
 };
 
-enum Functions
+#define DEF_CMD(name, num, args, code)  \
+    name = num,                         \
+
+
+#define DEF_JMP(name, num, sign)  \
+    name = num,                   \
+
+enum Opcode
 {
-    push = 1,
-    in = 2,
-    div = 3,
-    sub = 4,
-    add = 5,
-    mul = 6,
-    out = 7,
-    pop = 11,
-    hlt = -1
+    #include"commands.h"
+    #include"undef.h"
 };
 
-int Processor(My_stack *stk, Cpu *prc);
-void Print_content(My_stack *stk, Cpu *prc);
-void Push(My_stack *stk, int Elem);
-void Pop_r(My_stack *stk, Cpu *prc, int num_reg);
-void Push_r(My_stack *stk, Cpu *prc, int num_reg);
-void Processor_ctor(My_stack *stk, Cpu *prc);
-void Process_file(Cpu *prc);
-void In(My_stack *stk);
-void Div(My_stack *stk);
-void Sub(My_stack *stk);
-void Out(My_stack *stk);
-void Add(My_stack *stk);
-void Mul(My_stack *stk);
+int Processor(Spu *prc);
+void Print_content(Spu *prc);
+void Processor_ctor(Spu *prc);
+
 
 
 #endif // PROCESSOR_H_INCLUDED

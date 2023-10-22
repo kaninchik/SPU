@@ -11,19 +11,17 @@
 
 int main()
 {
-    My_stack stk = {};
+    Spu prc = {};
 
-    Cpu prc;
-
-    Processor_ctor(&stk, &prc);
+    Processor_ctor(&prc);
 
     Assembler(&prc);
 
-    Processor(&stk, &prc);
+    Processor(&prc);
 
-    Disassembler(&prc);
-
-    Stack_dtor(&stk);
+    //Disassembler(&prc);
 
     return 0;
 }
+
+
