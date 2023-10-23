@@ -9,34 +9,18 @@ const uint8_t reg = imm << 1;
 const uint8_t osu = reg << 1;
 const uint8_t cmd = 0b11111;
 
-static_assert((imm & reg) == 0, "imm and reg overlop");
-static_assert((imm & cmd) == 0, "imm and cmd overlop");
-static_assert((reg & cmd) == 0, "reg and cmd overlop");
-
-static const char *regs_name[] = {"rax",
-                                  "rbx",
-                                  "rcx",
-                                  "rdx",
-                                  "rsi",
-                                  "rdi",
-                                  "rbp",
-                                  "rsp",
-                                  "r08",
-                                  "r09",
-                                  "r10",
-                                  "r11",
-                                  "r12",
-                                  "r13",
-                                  "r14",
-                                  "r15"};
-
-const int reg_amount = sizeof(regs_name)/sizeof(regs_name[0]);
+static_assert((imm & reg) == 0, "imm and reg overlap");
+static_assert((imm & cmd) == 0, "imm and cmd overlap");
+static_assert((imm & osu) == 0, "imm and osu overlap");
+static_assert((reg & osu) == 0, "reg and osu overlap");
+static_assert((reg & cmd) == 0, "reg and cmd overlap");
+static_assert((osu & cmd) == 0, "osu and cmd overlap");
 
 struct Spu
 {
     My_stack stk = {};
     My_stack adress = {};
-    int regs[reg_amount] = {};
+    int *regs= {};
     int *instr = NULL;
     int *osu = NULL;
     int instr_number = 0;
@@ -52,7 +36,8 @@ struct Spu
 enum Opcode
 {
     #include"commands.h"
-    #include"undef.h"
+    #undef DEF_CMD
+    #undef DEF_JMP
 };
 
 int Processor(Spu *prc);
@@ -61,4 +46,4 @@ void Processor_ctor(Spu *prc);
 
 
 
-#endif // PROCESSOR_H_INCLUDED
+#endif

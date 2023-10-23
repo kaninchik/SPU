@@ -15,10 +15,12 @@ struct Labels
 int Assembler(Spu *prc);
 int Label_name(char *arg_str, Labels lbs[LABELS]);
 int What_reg(char *arg_str);
-bool Is_registrs(char *instructions);
+void Get_arg(char **instructions, Spu *prc, char *arg_str, int num);
+bool Is_register(char *instructions);
 bool Is_label(char* func_name);
 void Create_file(Spu *prc);
 char *Read_instructions(Spu *prc, int *n_strings);
+int What_reg(char *arg_str);
 
 
-#endif // ASSEMBLER_H_INCLUDED
+#endif

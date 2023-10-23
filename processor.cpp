@@ -6,6 +6,7 @@
 
 #include"stack.h"
 #include"security.h"
+#include"consts.h"
 #include"dump.h"
 #include"assembler.h"
 #include"processor.h"
@@ -16,6 +17,8 @@
 #define REGS         prc->regs
 #define CMD          prc->instr
 #define INDEX        i
+#define OSU          prc->osu
+#define ARG          INDEX + 1
 
 int Processor(Spu *prc)
 {
@@ -37,12 +40,12 @@ int Processor(Spu *prc)
                     if(num == call)                          \
                     {                                        \
                         PUSH(INDEX + 1);                     \
-                        INDEX = CMD[INDEX + 1] - 1;          \
+                        INDEX = CMD[ARG] - 1;          \
                                                              \
                     }                                        \
                     else if(num == jump)                     \
                     {                                        \
-                        INDEX = CMD[INDEX + 1] - 1;          \
+                        INDEX = CMD[ARG] - 1;          \
                     }                                        \
                     else                                     \
                     {                                        \
@@ -50,7 +53,7 @@ int Processor(Spu *prc)
                         POP(x2);                             \
                         if(x2 sign x1)                       \
                                                              \
-                            INDEX = CMD[INDEX + 1] - 1;      \
+                            INDEX = CMD[ARG] - 1;      \
                         else                                 \
                             INDEX++;                         \
                     }                                        \
@@ -58,7 +61,16 @@ int Processor(Spu *prc)
                 }                                            \
 
             #include"commands.h"
-            #include"undef.h"
+
+            #undef DEF_CMD
+            #undef DEF_JMP
+            #undef PUSH
+            #undef POP
+            #undef REGS
+            #undef CMD
+            #undef INDEX
+            #undef OSU
+            #undef ARG
 
             default:
             {
@@ -78,7 +90,7 @@ void Processor_ctor(Spu *prc)
     Stack_ctor(&prc->stk);
     prc->instr_number = 0;
     prc->instr = NULL;
-    prc->regs[reg_amount] = {};
+    prc->regs = (int *)calloc(reg_amount, sizeof(int));
     prc->osu = (int *)calloc(100, sizeof(int));
 }
 
@@ -90,6 +102,9 @@ void Print_content(Spu *prc)
 
     for(int i = 1; i < reg_amount; i++)
         printf("reg %d = %d\n", i, prc->regs[i]);
+
+    for(int i = 0; i < 100; i++)
+        printf("OSU %d = %d\n", i, prc->osu[i]);
 }
 
 

@@ -1,25 +1,50 @@
 DEF_CMD(push, 1, 1,
                   {
+                    if(CMD[INDEX] & osu)
+                    {
+                        if(CMD[INDEX] & imm)
+                            PUSH(OSU[ARG]);
+
+                        else if(CMD[INDEX] & reg)
+                        {
+                            x1 = REGS[CMD[ARG]];
+                            PUSH(OSU[x1]);
+                        }
+                        else
+                            assert(!"Unknown command");
+                    }
+
                     if(CMD[INDEX] & reg)
                     {
-                        PUSH(REGS[CMD[INDEX + 1]]);
+                        PUSH(REGS[CMD[ARG]]);
                         Print_content(prc);
                     }
 
                     if(CMD[INDEX] & imm)
                     {
-                        PUSH(CMD[INDEX + 1]);
+                        PUSH(CMD[ARG]);
                         Print_stack(&prc->stk);
                     }
                     INDEX++;})
 
 DEF_CMD(pop, 11, 1,
                 {
+                    if(CMD[INDEX] & osu)
+                    {
+                        if(CMD[INDEX] & imm)
+                        {
+                            POP(x1);
+                            OSU[CMD[ARG]] = x1;
+                        }
+                        else
+                            assert(!"Unknown command");
+                    }
+
                     if(CMD[INDEX] & reg)
                     {
                         POP(x1);
 
-                        REGS[CMD[INDEX + 1]] = x1;
+                        REGS[CMD[ARG]] = x1;
 
                         Print_content(prc);
                     }
