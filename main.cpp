@@ -3,7 +3,6 @@
 #include<cstdint>
 
 #include"stack.h"
-#include"consts.h"
 #include"security.h"
 #include"dump.h"
 #include"assembler.h"
@@ -23,6 +22,9 @@ int main()
     //Disassembler(&prc);
 
     Print_content(&prc);
+    Processor_dtor(&prc);
+
+
 
     return 0;
 }
