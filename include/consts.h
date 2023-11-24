@@ -1,22 +1,12 @@
 #ifndef CONSTS_H_INCLUDED
 #define CONSTS_H_INCLUDED
 
-static const char *registers_name[] = {
-"rax", "rbx", "rcx", "rdx",
-                                "rsi",
-                                "rdi",
-                                "rbp",
-                                "rsp",
-                                "r08",
-                                "r09",
-                                "r10",
-                                "r11",
-                                "r12",
-                                "r13",
-                                "r14",
-                                "r15"};
+static const char *register_names[] = {
+    "rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "rsp",
+    "r08", "r09", "r10", "r11", "r12", "r13", "r14", "r15"
+};
 
-const int reg_amount = sizeof(registers_name)/sizeof(registers_name[0]);
+const int registers_num = sizeof(register_names)/sizeof(register_names[0]);
 
 enum Errors_prc
 {

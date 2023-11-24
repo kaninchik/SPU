@@ -1,6 +1,6 @@
 #ifndef DISASSEMBLER_H_INCLUDED
 #define DISASSEMBLER_H_INCLUDED
 
-int Disassembler(Spu *prc);
+int Disassembler();
 
 #endif // DISASSEMBLER_H_INCLUDED

@@ -1,49 +1,59 @@
-#include<cstdio>
-#include<cstring>
-#include<cstdlib>
-#include<cstdint>
-#include<cassert>
+#include <cstdio>
+#include <cstring>
+#include <cstdlib>
+#include <cstdint>
+#include <cassert>
+#include <cmath>
+#include <sys/stat.h>
 
-#include"stack.h"
-#include"security.h"
-#include"consts.h"
-#include"dump.h"
-#include"assembler.h"
-#include"processor.h"
-#include"disassembler.h"
+#include "stack.h"
+#include "security.h"
+#include "consts.h"
+#include "dump.h"
+#include "assembler.h"
+#include "processor.h"
+#include "disassembler.h"
 
-#define PUSH(arg)    Stack_push(&prc->stk, arg)
-#define POP(arg)     Stack_pop(&prc->stk, &arg)
-#define REGS         prc->regs
-#define CMD          prc->instr
-#define INDEX        i
-#define OSU          prc->osu
-#define CMD_ARG      CMD[INDEX + 1]
-#define ARG          INDEX + 1
+static const char *ASM_FILE = "assembler.bin";
 
-
-#define DEF_CMD(name, num, args, code)  \
-    name = num,                         \
-
-
-#define DEF_JMP(name, num, sign)  \
-    name = num,                   \
+void Print_content(Spu *prc);
+void Process_errors(Spu *prc);
 
 enum Opcode
 {
+    #define DEF_CMD(name, num, args, code)  \
+        name = num,
+
+
+    #define DEF_JMP(name, num, sign)  \
+        name = num,
+
+
     #include"commands.h"
     #undef DEF_CMD
     #undef DEF_JMP
 };
 
+static int Get_file_size(FILE *fp1);
+void Get_opcode(Spu *prc);
 
 int Processor(Spu *prc)
 {
+    Get_opcode(prc);
     int x1 = 0;
     int x2 = 0;
 
     for(int i = 0; prc->instr[i] != hlt; i++)
     {
+        #define PUSH(arg)    Stack_push(&prc->stk, arg)
+        #define POP(arg)     Stack_pop(&prc->stk, &arg)
+        #define REGS         prc->regs
+        #define CMD          prc->instr
+        #define INDEX        i
+        #define OSU          prc->osu
+        #define CMD_ARG      CMD[ARG]
+        #define ARG          INDEX + 1
+
         switch(prc->instr[i] & cmd)
         {
             #define DEF_CMD(name, num, args, code)        \
@@ -58,24 +68,18 @@ int Processor(Spu *prc)
                     {                                        \
                         PUSH(INDEX + 1);                     \
                         INDEX = CMD[ARG] - 1;                \
-                                                             \
-                    }                                        \
-                    else if(num == jump)                     \
-                    {                                        \
-                        INDEX = CMD[ARG] - 1;                \
                     }                                        \
                     else                                     \
                     {                                        \
                         POP(x1);                             \
                         POP(x2);                             \
                         if(x2 sign x1)                       \
-                                                             \
-                            INDEX = CMD[ARG] - 1;            \
+                            INDEX = CMD_ARG - 1;             \
                         else                                 \
                             INDEX++;                         \
                     }                                        \
                     break;                                   \
-                }                                            \
+                }
 
             #include"commands.h"
 
@@ -100,18 +104,51 @@ int Processor(Spu *prc)
     return 0;
 }
 
+void Get_opcode(Spu *prc)
+{
+    FILE *fp1 = fopen(ASM_FILE, "rb");
+
+    /*if(fp1 == NULL)
+    {
+        prc->status = prc->status | ERROR_WITH_OPENNING_FILE;
+        Process_errors(prc);
+    }*/
+
+    int instr_number = Get_file_size(fp1)/sizeof(int);
+    prc->instr = (int *)calloc(instr_number, sizeof(int));
+    int n_sum = fread(prc->instr, sizeof(int), instr_number, fp1);
+
+    /*if(n_sum != prc->instr_number/4)
+    {
+        prc->status = prc->status | ERROR_WITH_READING_FROM_FILE;
+        Process_errors(prc);
+    }*/
+
+    fclose(fp1);
+}
+
+static int Get_file_size(FILE *fp1)
+{
+    assert(fp1 != NULL);
+
+    struct stat st = {};
+    int fd = fileno(fp1);
+    fstat(fd, &st);
+
+    return st.st_size;
+}
+
 void Processor_ctor(Spu *prc)
 {
     assert(prc != NULL);
 
     Stack_ctor(&prc->stk);
-    prc->instr_number = 0;
     prc->instr = NULL;
-    prc->regs = (int *)calloc(reg_amount, sizeof(int));
+    prc->regs = (int *)calloc(registers_num, sizeof(int));
 
     if(prc->regs == NULL)
     {
-        prc->status = prc->status | ARRAY_IS_NULLPTR;
+        prc->status = ARRAY_IS_NULLPTR;
         Process_errors(prc);
     }
 
@@ -119,7 +156,7 @@ void Processor_ctor(Spu *prc)
 
     if(prc->osu == NULL)
     {
-        prc->status = prc->status | ARRAY_IS_NULLPTR;
+        prc->status = ARRAY_IS_NULLPTR;
         Process_errors(prc);
     }
 }
@@ -127,7 +164,6 @@ void Processor_ctor(Spu *prc)
 void Processor_dtor(Spu *prc)
 {
     Stack_dtor(&prc->stk);
-    prc->instr_number = 0;
     free(prc->regs);
     free(prc->osu);
     free(prc->instr);
@@ -137,13 +173,13 @@ void Print_content(Spu *prc)
 {
     assert(prc != NULL);
 
-    Print_stack(&prc->stk);
+    //Print_stack(&prc->stk);
 
-    for(int i = 1; i < reg_amount; i++)
-        printf("reg %d = %d\n", i, prc->regs[i]);
+    /*for(int i = 1; i < 3; i++)
+        printf("reg %d = %d\n", i, prc->regs[i]);*/
 
-    for(int i = 1; i < 100; i++)
-        printf("OSU %d = %d\n", i, prc->osu[i]);
+    /*for(int i = 1; i < 100; i++)
+        printf("OSU %d = %d\n", i, prc->osu[i]);*/
 }
 
 void Process_errors(Spu *prc)
